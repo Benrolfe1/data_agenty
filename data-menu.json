@@ -1,0 +1,304 @@
+{
+  "version": "1.0.0",
+  "updated": "2025-01-15T10:00:00Z",
+  "description": "Data menu for trading agents - shared source of truth",
+  "api_base": {
+    "coinglass": {
+      "base_url": "https://open-api-v3.coinglass.com/api",
+      "headers": {
+        "CG-API-KEY": "{{COINGLASS_API_KEY}}"
+      },
+      "rate_limit": 100,
+      "priority": 1
+    },
+    "binance": {
+      "base_url": "https://api.binance.com",
+      "headers": {},
+      "rate_limit": 1200,
+      "priority": 0,
+      "free": true
+    }
+  },
+  "endpoints": {
+    "spot_price_current": {
+      "name": "Current Spot Price",
+      "description": "Latest spot price for a trading pair",
+      "category": "price",
+      "size_class": "tiny",
+      "ai_safe": true,
+      "sources": {
+        "coinglass": {
+          "endpoint": "/spot/price/history",
+          "params": {
+            "symbol": "required|BTCUSDT",
+            "interval": "fixed|1m",
+            "limit": "fixed|1"
+          },
+          "response_parser": "latest_close_price"
+        }
+      },
+      "ai_injection": {
+        "method": "direct",
+        "format": "{{symbol}}: ${{close}} ({{time}})"
+      }
+    },
+    
+    "spot_price_history": {
+      "name": "Spot Price History OHLC",
+      "description": "Historical OHLC price data with volume",
+      "category": "price",
+      "size_class": "medium",
+      "ai_safe": "summary_only",
+      "sources": {
+        "coinglass": {
+          "endpoint": "/spot/price/history",
+          "params": {
+            "symbol": "required|BTCUSDT",
+            "interval": "optional|4h|[1m,5m,15m,30m,1h,4h,12h,1d]",
+            "start_time": "optional|timestamp",
+            "end_time": "optional|timestamp",
+            "limit": "optional|100"
+          },
+          "example_call": "/spot/price/history?symbol=BTCUSDT&interval=4h",
+          "response_parser": "ohlc_array"
+        }
+      },
+      "ai_injection": {
+        "method": "statistical_summary",
+        "max_points": 50,
+        "summary_fields": [
+          "period_high",
+          "period_low", 
+          "current_vs_open",
+          "volatility",
+          "trend_direction",
+          "volume_profile"
+        ],
+        "example_output": "BTCUSDT 4h: High: $82,092, Low: $81,400, Current: $81,720 (-0.5% from open), Volatility: 0.8%, Trend: Sideways, Volume: $96.8M"
+      }
+    },
+    
+    "funding_rate_current": {
+      "name": "Current Funding Rate",
+      "description": "Latest funding rate for perpetual futures",
+      "category": "derivatives",
+      "size_class": "tiny",
+      "ai_safe": true,
+      "sources": {
+        "coinglass": {
+          "endpoint": "/futures/funding-rate/history",
+          "params": {
+            "symbol": "required|BTCUSDT",
+            "interval": "fixed|1h",
+            "limit": "fixed|1"
+          },
+          "response_parser": "latest_close_value"
+        }
+      },
+      "ai_injection": {
+        "method": "direct",
+        "format": "Funding Rate {{symbol}}: {{close}}% ({{sentiment_interpretation}})"
+      }
+    },
+    
+    "open_interest_current": {
+      "name": "Current Open Interest",
+      "description": "Latest open interest for futures",
+      "category": "derivatives",
+      "size_class": "tiny",
+      "ai_safe": true,
+      "sources": {
+        "coinglass": {
+          "endpoint": "/futures/open-interest/history",
+          "params": {
+            "symbol": "required|BTCUSDT",
+            "interval": "fixed|1h",
+            "limit": "fixed|1"
+          },
+          "response_parser": "latest_close_value"
+        }
+      },
+      "ai_injection": {
+        "method": "direct",
+        "format": "OI {{symbol}}: ${{close|humanize}} ({{change_24h}})"
+      }
+    },
+    
+    "long_short_ratio": {
+      "name": "Long-Short Account Ratio",
+      "description": "Ratio of long vs short accounts",
+      "category": "sentiment",
+      "size_class": "small",
+      "ai_safe": true,
+      "sources": {
+        "coinglass": {
+          "endpoint": "/futures/global-long-short-account-ratio/history",
+          "params": {
+            "symbol": "required|BTCUSDT",
+            "interval": "optional|4h",
+            "limit": "optional|24"
+          },
+          "example_response": {
+            "time": 1741604400000,
+            "global_account_long_percent": 73.88,
+            "global_account_short_percent": 26.12,
+            "global_account_long_short_ratio": 2.83
+          }
+        }
+      },
+      "ai_injection": {
+        "method": "interpreted",
+        "format": "L/S Ratio: {{ratio}} ({{long_percent}}% long / {{short_percent}}% short) - Market sentiment: {{interpretation}}",
+        "interpretation_rules": {
+          "ratio > 3": "Extremely bullish positioning",
+          "ratio > 2": "Bullish positioning",
+          "ratio > 1.5": "Moderately bullish",
+          "ratio > 0.8": "Balanced",
+          "ratio <= 0.8": "Bearish positioning"
+        }
+      }
+    },
+    
+    "taker_buysell_flow": {
+      "name": "Taker Buy/Sell Volume Flow",
+      "description": "Aggressive buying vs selling volume",
+      "category": "flow",
+      "size_class": "small",
+      "ai_safe": "summary",
+      "sources": {
+        "coinglass": {
+          "endpoint": "/futures/v2/taker-buy-sell-volume/history",
+          "params": {
+            "symbol": "required|BTCUSDT",
+            "interval": "optional|4h",
+            "limit": "optional|24"
+          },
+          "example_response": {
+            "time": 1750183200000,
+            "taker_buy_volume_usd": "414120141.0714",
+            "taker_sell_volume_usd": "350417509.655"
+          }
+        }
+      },
+      "ai_injection": {
+        "method": "flow_analysis",
+        "format": "Buy Flow: ${{buy_volume|humanize}}, Sell Flow: ${{sell_volume|humanize}}, Net: {{net_flow}} ({{flow_interpretation}})",
+        "include_trend": true
+      }
+    },
+    
+    "futures_price_history": {
+      "name": "Futures Price History OHLC",
+      "description": "Historical OHLC for futures with volume",
+      "category": "price",
+      "size_class": "medium",
+      "ai_safe": "summary_only",
+      "warning": "Can return large datasets - will be summarized",
+      "sources": {
+        "coinglass": {
+          "endpoint": "/futures/price/history",
+          "params": {
+            "symbol": "required|BTCUSDT",
+            "interval": "optional|4h",
+            "start_time": "optional|timestamp",
+            "end_time": "optional|timestamp"
+          },
+          "example_call": "GET /api/futures/price/history?symbol=BTCUSDT&interval=4h&start_time=1700000000000&end_time=1700007200000"
+        }
+      },
+      "ai_injection": {
+        "method": "statistical_summary",
+        "compress_to": "key_metrics"
+      }
+    }
+  },
+  
+  "response_parsers": {
+    "latest_close_price": {
+      "description": "Extract most recent close price from OHLC array",
+      "logic": "data[-1].close"
+    },
+    "ohlc_array": {
+      "description": "Full OHLC data array",
+      "logic": "data"
+    },
+    "latest_close_value": {
+      "description": "Extract most recent close value",
+      "logic": "data[-1].close"
+    }
+  },
+  
+  "size_classes": {
+    "tiny": {
+      "bytes": "<1KB",
+      "tokens": "<100",
+      "ai_safe": true,
+      "storage": "inline"
+    },
+    "small": {
+      "bytes": "1-10KB",
+      "tokens": "100-1000",
+      "ai_safe": true,
+      "storage": "inline"
+    },
+    "medium": {
+      "bytes": "10-100KB", 
+      "tokens": "1000-10000",
+      "ai_safe": "summary_only",
+      "storage": "file"
+    },
+    "large": {
+      "bytes": ">100KB",
+      "tokens": ">10000",
+      "ai_safe": false,
+      "storage": "file",
+      "requires_confirmation": true
+    }
+  },
+  
+  "data_transformers": {
+    "humanize": {
+      "description": "Convert large numbers to human readable",
+      "examples": {
+        "100000000": "$100M",
+        "1500000000": "$1.5B"
+      }
+    },
+    "change_24h": {
+      "description": "Calculate 24h change percentage",
+      "requires": "historical_data"
+    }
+  },
+  
+  "usage_examples": {
+    "simple_query": {
+      "request": {
+        "endpoint": "spot_price_current",
+        "params": {
+          "symbol": "BTCUSDT"
+        }
+      },
+      "raw_response": {
+        "code": "0",
+        "data": [{
+          "time": 1741690800000,
+          "close": 81720.34
+        }]
+      },
+      "ai_receives": "BTCUSDT: $81,720.34 (2024-01-15 10:00:00)"
+    },
+    
+    "complex_query": {
+      "request": {
+        "endpoint": "long_short_ratio",
+        "params": {
+          "symbol": "BTCUSDT",
+          "interval": "4h",
+          "limit": 6
+        }
+      },
+      "note": "Returns 6 data points (24 hours of 4h candles)",
+      "ai_receives": "L/S Ratio: 2.83 (73.88% long / 26.12% short) - Market sentiment: Bullish positioning. Trend: Increasing bullish bias over last 24h"
+    }
+  }
+}
