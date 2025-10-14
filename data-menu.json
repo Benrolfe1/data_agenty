@@ -1,133 +1,182 @@
 {
+  "version": "1.0",
+  "notes": "Single-file registry mapping intents to executable API calls. Replace COINGLASS_API_KEY with your real key.",
   "data_sources": [
     {
-      "name": "spot_price",
-      "description": "Current spot price for any trading pair",
-      "api_url": "https://api.binance.com/api/v3/ticker/price",
+      "name": "binance_spot_price",
+      "description": "Binance spot price for a symbol, e.g., BTCUSDT",
+      "intent_patterns": [
+        "spot",
+        "price",
+        "latest price",
+        "btc price",
+        "eth price"
+      ],
       "method": "GET",
-      "parameters": {
+      "url": "https://api.binance.com/api/v3/ticker/price",
+      "params": {
         "symbol": "BTCUSDT"
       },
-      "headers": {}
+      "headers": {},
+      "required_keys": [],
+      "response_path": ""
     },
     {
-      "name": "funding_rate",
-      "description": "Current funding rate for perpetual futures",
-      "api_url": "https://fapi.binance.com/fapi/v1/fundingRate",
+      "name": "binance_funding_rate_latest",
+      "description": "Most recent funding rate from Binance Perpetuals",
+      "intent_patterns": [
+        "funding rate",
+        "perp funding"
+      ],
       "method": "GET",
-      "parameters": {
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate",
+      "params": {
         "symbol": "BTCUSDT",
         "limit": "1"
       },
-      "headers": {}
+      "headers": {},
+      "required_keys": [],
+      "response_path": ""
     },
     {
-      "name": "open_interest",
-      "description": "Current open interest for futures contracts",
-      "api_url": "https://fapi.binance.com/fapi/v1/openInterest",
+      "name": "binance_open_interest",
+      "description": "Current Open Interest on Binance Perps (contracts)",
+      "intent_patterns": [
+        "open interest",
+        "oi"
+      ],
       "method": "GET",
-      "parameters": {
+      "url": "https://fapi.binance.com/fapi/v1/openInterest",
+      "params": {
         "symbol": "BTCUSDT"
       },
-      "headers": {}
+      "headers": {},
+      "required_keys": [],
+      "response_path": ""
     },
     {
-      "name": "coinglass_liquidations",
-      "description": "CoinGlass: Historical liquidation data aggregated across exchanges",
-      "api_url": "https://open-api-v4.coinglass.com/api/futures/liquidation/aggregated-history",
+      "name": "binance_klines_1m_100",
+      "description": "Last 100 one-minute OHLCV klines from Binance",
+      "intent_patterns": [
+        "klines",
+        "ohlcv",
+        "candles"
+      ],
       "method": "GET",
-      "parameters": {
-        "symbol": "BTC",
-        "interval": "1d",
-        "exchange_list": "BINANCE,OKX,BYBIT"
-      },
-      "headers": {
-        "CG-API-KEY": "114a4fe55ebf42afbec4b56391c791fc"
-      }
-    },
-    {
-      "name": "coinglass_open_interest",
-      "description": "CoinGlass: Open interest data across multiple exchanges",
-      "api_url": "https://open-api-v4.coinglass.com/api/futures/openInterest/ohlc-aggregated-history",
-      "method": "GET",
-      "parameters": {
-        "symbol": "BTC",
-        "interval": "1d"
-      },
-      "headers": {
-        "CG-API-KEY": "114a4fe55ebf42afbec4b56391c791fc"
-      }
-    },
-    {
-      "name": "coinglass_funding_rate",
-      "description": "CoinGlass: Funding rate data across exchanges",
-      "api_url": "https://open-api-v4.coinglass.com/api/futures/funding/history",
-      "method": "GET",
-      "parameters": {
-        "symbol": "BTC",
-        "interval": "8h"
-      },
-      "headers": {
-        "CG-API-KEY": "114a4fe55ebf42afbec4b56391c791fc"
-      }
-    },
-    {
-      "name": "coinglass_long_short_ratio",
-      "description": "CoinGlass: Long/Short account ratio across exchanges",
-      "api_url": "https://open-api-v4.coinglass.com/api/futures/longShort/accounts",
-      "method": "GET",
-      "parameters": {
-        "symbol": "BTC",
-        "interval": "1d"
-      },
-      "headers": {
-        "CG-API-KEY": "114a4fe55ebf42afbec4b56391c791fc"
-      }
-    },
-    {
-      "name": "coinglass_fear_greed",
-      "description": "CoinGlass: Crypto Fear & Greed Index",
-      "api_url": "https://open-api-v4.coinglass.com/api/index/fear-greed",
-      "method": "GET",
-      "parameters": {},
-      "headers": {
-        "CG-API-KEY": "114a4fe55ebf42afbec4b56391c791fc"
-      }
-    },
-    {
-      "name": "coinglass_exchange_flows",
-      "description": "CoinGlass: Exchange inflow and outflow data",
-      "api_url": "https://open-api-v4.coinglass.com/api/indicator/exchange-flows-total",
-      "method": "GET",
-      "parameters": {
-        "symbol": "BTC",
-        "interval": "1d"
-      },
-      "headers": {
-        "CG-API-KEY": "114a4fe55ebf42afbec4b56391c791fc"
-      }
-    },
-    {
-      "name": "long_short_ratio",
-      "description": "Binance: Long/Short account ratio",
-      "api_url": "https://fapi.binance.com/futures/data/globalLongShortAccountRatio",
-      "method": "GET",
-      "parameters": {
+      "url": "https://api.binance.com/api/v3/klines",
+      "params": {
         "symbol": "BTCUSDT",
-        "period": "5m",
-        "limit": "10"
+        "interval": "1m",
+        "limit": "100"
       },
-      "headers": {}
+      "headers": {},
+      "required_keys": [],
+      "response_path": ""
     },
     {
-      "name": "24h_ticker",
-      "description": "Binance: 24-hour price change statistics",
-      "api_url": "https://api.binance.com/api/v3/ticker/24hr",
+      "name": "coinglass_liquidation_history",
+      "description": "CoinGlass aggregated liquidation history",
+      "intent_patterns": [
+        "liquidation",
+        "liquidations",
+        "liq"
+      ],
       "method": "GET",
-      "parameters": {
-        "symbol": "BTCUSDT"
+      "url": "https://open-api-v4.coinglass.com/api/futures/liquidation/history",
+      "params": {
+        "symbol": "BTC",
+        "interval": "4h"
       },
-      "headers": {}
+      "headers": {
+        "CG-API-KEY": "COINGLASS_API_KEY"
+      },
+      "required_keys": [
+        "COINGLASS_API_KEY"
+      ],
+      "response_path": "data"
+    },
+    {
+      "name": "coinglass_open_interest_history",
+      "description": "CoinGlass open interest history (OHLC)",
+      "intent_patterns": [
+        "oi history",
+        "open interest history"
+      ],
+      "method": "GET",
+      "url": "https://open-api-v4.coinglass.com/api/futures/open-interest/history",
+      "params": {
+        "symbol": "BTCUSDT",
+        "period": "4h"
+      },
+      "headers": {
+        "CG-API-KEY": "COINGLASS_API_KEY"
+      },
+      "required_keys": [
+        "COINGLASS_API_KEY"
+      ],
+      "response_path": "data"
+    },
+    {
+      "name": "coinglass_funding_rate_history",
+      "description": "CoinGlass funding rate history (OHLC)",
+      "intent_patterns": [
+        "funding rate history",
+        "funding history"
+      ],
+      "method": "GET",
+      "url": "https://open-api-v4.coinglass.com/api/futures/funding-rate/history",
+      "params": {
+        "symbol": "BTCUSDT",
+        "period": "4h"
+      },
+      "headers": {
+        "CG-API-KEY": "COINGLASS_API_KEY"
+      },
+      "required_keys": [
+        "COINGLASS_API_KEY"
+      ],
+      "response_path": "data"
+    },
+    {
+      "name": "coinglass_long_short_ratio_history",
+      "description": "CoinGlass global long/short account ratio history",
+      "intent_patterns": [
+        "long short ratio",
+        "lsr",
+        "longs shorts"
+      ],
+      "method": "GET",
+      "url": "https://open-api-v4.coinglass.com/api/futures/global-long-short-account-ratio/history",
+      "params": {
+        "symbol": "BTCUSDT",
+        "period": "4h"
+      },
+      "headers": {
+        "CG-API-KEY": "COINGLASS_API_KEY"
+      },
+      "required_keys": [
+        "COINGLASS_API_KEY"
+      ],
+      "response_path": "data"
+    },
+    {
+      "name": "coinglass_fear_greed_index",
+      "description": "CoinGlass Fear and Greed index",
+      "intent_patterns": [
+        "fear",
+        "greed",
+        "fear and greed"
+      ],
+      "method": "GET",
+      "url": "https://open-api-v4.coinglass.com/api/index/fear-greed-index",
+      "params": {},
+      "headers": {
+        "CG-API-KEY": "COINGLASS_API_KEY"
+      },
+      "required_keys": [
+        "COINGLASS_API_KEY"
+      ],
+      "response_path": "data"
     }
   ]
 }
