@@ -1,16 +1,13 @@
 {
   "version": "1.0",
-  "notes": "Single-file registry mapping intents to executable API calls. Replace COINGLASS_API_KEY with your real key.",
   "data_sources": [
     {
       "name": "binance_spot_price",
-      "description": "Binance spot price for a symbol, e.g., BTCUSDT",
+      "description": "Binance spot price for a symbol",
       "intent_patterns": [
         "spot",
         "price",
-        "latest price",
-        "btc price",
-        "eth price"
+        "latest price"
       ],
       "method": "GET",
       "url": "https://api.binance.com/api/v3/ticker/price",
@@ -18,12 +15,11 @@
         "symbol": "BTCUSDT"
       },
       "headers": {},
-      "required_keys": [],
       "response_path": ""
     },
     {
       "name": "binance_funding_rate_latest",
-      "description": "Most recent funding rate from Binance Perpetuals",
+      "description": "Most recent funding rate from Binance perpetuals",
       "intent_patterns": [
         "funding rate",
         "perp funding"
@@ -35,12 +31,11 @@
         "limit": "1"
       },
       "headers": {},
-      "required_keys": [],
       "response_path": ""
     },
     {
       "name": "binance_open_interest",
-      "description": "Current Open Interest on Binance Perps (contracts)",
+      "description": "Current open interest on Binance perpetuals",
       "intent_patterns": [
         "open interest",
         "oi"
@@ -51,26 +46,6 @@
         "symbol": "BTCUSDT"
       },
       "headers": {},
-      "required_keys": [],
-      "response_path": ""
-    },
-    {
-      "name": "binance_klines_1m_100",
-      "description": "Last 100 one-minute OHLCV klines from Binance",
-      "intent_patterns": [
-        "klines",
-        "ohlcv",
-        "candles"
-      ],
-      "method": "GET",
-      "url": "https://api.binance.com/api/v3/klines",
-      "params": {
-        "symbol": "BTCUSDT",
-        "interval": "1m",
-        "limit": "100"
-      },
-      "headers": {},
-      "required_keys": [],
       "response_path": ""
     },
     {
@@ -88,16 +63,13 @@
         "interval": "4h"
       },
       "headers": {
-        "CG-API-KEY": "COINGLASS_API_KEY"
+        "CG-API-KEY": "INLINE_CG_KEY"
       },
-      "required_keys": [
-        "COINGLASS_API_KEY"
-      ],
       "response_path": "data"
     },
     {
       "name": "coinglass_open_interest_history",
-      "description": "CoinGlass open interest history (OHLC)",
+      "description": "CoinGlass open interest history",
       "intent_patterns": [
         "oi history",
         "open interest history"
@@ -109,16 +81,13 @@
         "period": "4h"
       },
       "headers": {
-        "CG-API-KEY": "COINGLASS_API_KEY"
+        "CG-API-KEY": "INLINE_CG_KEY"
       },
-      "required_keys": [
-        "COINGLASS_API_KEY"
-      ],
       "response_path": "data"
     },
     {
       "name": "coinglass_funding_rate_history",
-      "description": "CoinGlass funding rate history (OHLC)",
+      "description": "CoinGlass funding rate history",
       "intent_patterns": [
         "funding rate history",
         "funding history"
@@ -130,11 +99,8 @@
         "period": "4h"
       },
       "headers": {
-        "CG-API-KEY": "COINGLASS_API_KEY"
+        "CG-API-KEY": "INLINE_CG_KEY"
       },
-      "required_keys": [
-        "COINGLASS_API_KEY"
-      ],
       "response_path": "data"
     },
     {
@@ -152,11 +118,8 @@
         "period": "4h"
       },
       "headers": {
-        "CG-API-KEY": "COINGLASS_API_KEY"
+        "CG-API-KEY": "INLINE_CG_KEY"
       },
-      "required_keys": [
-        "COINGLASS_API_KEY"
-      ],
       "response_path": "data"
     },
     {
@@ -171,11 +134,8 @@
       "url": "https://open-api-v4.coinglass.com/api/index/fear-greed-index",
       "params": {},
       "headers": {
-        "CG-API-KEY": "COINGLASS_API_KEY"
+        "CG-API-KEY": "INLINE_CG_KEY"
       },
-      "required_keys": [
-        "COINGLASS_API_KEY"
-      ],
       "response_path": "data"
     }
   ]
