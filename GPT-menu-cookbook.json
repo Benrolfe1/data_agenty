@@ -1,0 +1,124 @@
+{
+  "version": "1.0",
+  "description": "Single-file menu + cookbook used by the n8n runner. Patterns map to ops. Ops define request+response.",
+  "globals": {
+    "COINGLASS_API_KEY": "114a4fe55ebf42afbec4b56391c791fc",
+    "symbol_formats": {
+      "binance": {
+        "BTC": "BTCUSDT",
+        "ETH": "ETHUSDT"
+      },
+      "coinglass": {
+        "BTC": "BTC",
+        "ETH": "ETH"
+      }
+    }
+  },
+  "menu": {
+    "patterns": [
+      {
+        "match": [
+          "btc liquidations",
+          "liquidations"
+        ],
+        "op": "CG_LiqHistory",
+        "params": {
+          "symbol": "BTC",
+          "interval": "4h"
+        }
+      },
+      {
+        "match": [
+          "funding rate",
+          "btc funding"
+        ],
+        "op": "CG_FundingRateLatest",
+        "params": {
+          "symbol": "BTCUSDT"
+        }
+      },
+      {
+        "match": [
+          "btc price",
+          "spot price"
+        ],
+        "op": "Binance_Ticker",
+        "params": {
+          "symbol": "BTCUSDT"
+        }
+      }
+    ]
+  },
+  "ops": {
+    "CG_LiqHistory": {
+      "base": "https://open-api-v4.coinglass.com",
+      "method": "GET",
+      "path": "/api/futures/liquidation/history",
+      "params": [
+        {
+          "name": "symbol",
+          "in": "query",
+          "required": true,
+          "format": "coinglass"
+        },
+        {
+          "name": "interval",
+          "in": "query",
+          "required": false,
+          "default": "4h"
+        }
+      ],
+      "headers": {
+        "CG-API-KEY": "${COINGLASS_API_KEY}"
+      },
+      "response": {
+        "path": "data",
+        "schema": {
+          "type": "array"
+        }
+      }
+    },
+    "CG_FundingRateLatest": {
+      "base": "https://open-api-v4.coinglass.com",
+      "method": "GET",
+      "path": "/api/futures/funding-rate/latest",
+      "params": [
+        {
+          "name": "symbol",
+          "in": "query",
+          "required": true,
+          "format": "binance"
+        }
+      ],
+      "headers": {
+        "CG-API-KEY": "${COINGLASS_API_KEY}"
+      },
+      "response": {
+        "path": "data",
+        "schema": {
+          "type": "object"
+        }
+      }
+    },
+    "Binance_Ticker": {
+      "base": "https://api.binance.com",
+      "method": "GET",
+      "path": "/api/v3/ticker/price",
+      "params": [
+        {
+          "name": "symbol",
+          "in": "query",
+          "required": true,
+          "format": "binance"
+        }
+      ],
+      "headers": {},
+      "response": {
+        "path": "",
+        "schema": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}
