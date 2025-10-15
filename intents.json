@@ -1,0 +1,73 @@
+{
+  "version": "1.0",
+  "description": "Keyword patterns mapped to OpenAPI operationIds",
+  "patterns": [
+    {
+      "match": ["liquidation", "liquidations", "liq"],
+      "operationId": "coinglass_liquidations",
+      "params": {
+        "symbol": "BTC",
+        "interval": "1d",
+        "exchange_list": "BINANCE,OKX,BYBIT"
+      },
+      "symbol_format": "coinglass"
+    },
+    {
+      "match": ["price", "spot price", "current price"],
+      "operationId": "binance_spot_price",
+      "params": {
+        "symbol": "BTCUSDT"
+      },
+      "symbol_format": "binance"
+    },
+    {
+      "match": ["24h", "24 hour", "24hr", "stats", "statistics"],
+      "operationId": "binance_24h_stats",
+      "params": {
+        "symbol": "BTCUSDT"
+      },
+      "symbol_format": "binance"
+    },
+    {
+      "match": ["funding", "funding rate"],
+      "operationId": "binance_funding_rate",
+      "params": {
+        "symbol": "BTCUSDT",
+        "limit": 1
+      },
+      "symbol_format": "binance"
+    },
+    {
+      "match": ["open interest", "oi"],
+      "operationId": "binance_open_interest",
+      "params": {
+        "symbol": "BTCUSDT"
+      },
+      "symbol_format": "binance"
+    },
+    {
+      "match": ["long short", "long/short", "ls ratio", "ratio"],
+      "operationId": "binance_long_short_ratio",
+      "params": {
+        "symbol": "BTCUSDT",
+        "period": "5m",
+        "limit": 10
+      },
+      "symbol_format": "binance"
+    }
+  ],
+  "symbol_formats": {
+    "binance": {
+      "BTC": "BTCUSDT",
+      "ETH": "ETHUSDT",
+      "SOL": "SOLUSDT",
+      "BNB": "BNBUSDT"
+    },
+    "coinglass": {
+      "BTC": "BTC",
+      "ETH": "ETH",
+      "SOL": "SOL",
+      "BNB": "BNB"
+    }
+  }
+}
