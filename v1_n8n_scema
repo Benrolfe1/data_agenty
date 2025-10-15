@@ -1,0 +1,165 @@
+{
+  "name": "Stage 2 - Execute API",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 400],
+      "webhookId": "stage2-execute"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load menu from GitHub\nconst PAT = 'github_patxxxxxxxxxx';\n\nconst specResp = await this.helpers.httpRequest({\n  method: 'GET',\n  url: 'https://api.github.com/repos/Benrolfe1/data_agenty/contents/openapi-spec.json',\n  headers: {'Authorization': `Bearer ${PAT}`, 'Accept': 'application/vnd.github.v3+json'},\n  json: true\n});\n\nconst spec = JSON.parse(Buffer.from(specResp.content, 'base64').toString());\n\nconst menuSummary = [];\nfor (const [path, pathItem] of Object.entries(spec.paths || {})) {\n  for (const [method, operation] of Object.entries(pathItem)) {\n    if (operation.operationId) {\n      const params = (operation.parameters || []).map(p => ({\n        name: p.name,\n        required: p.required,\n        type: p.schema?.type,\n        example: p.schema?.example,\n        default: p.schema?.default\n      }));\n      \n      menuSummary.push({\n        operationId: operation.operationId,\n        summary: operation.summary,\n        parameters: params\n      });\n    }\n  }\n}\n\nconst userQuery = $input.item.json.chatInput;\n\nconst prompt = `USER QUERY: ${userQuery}\n\nAVAILABLE ENDPOINTS:\n${JSON.stringify(menuSummary, null, 2)}\n\nTask: Which operationId should I call to answer this query?\n\nCRITICAL: Respond with VALID JSON ONLY. NO COMMENTS. NO EXPLANATIONS OUTSIDE THE JSON.\n\nFormat:\n{\n  \"reasoning\": \"your thinking\",\n  \"operationId\": \"the_id\",\n  \"parameters\": {\"param\": \"value\"}\n}\n\nRules:\n- Use defaults from menu when available\n- Binance: BTCUSDT, ETHUSDT format\n- CoinGlass: BTC, ETH format\n- NO comments in JSON`;\n\nreturn { json: { prompt, userQuery, fullSpec: spec }};"
+      },
+      "id": "2",
+      "name": "Load Menu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 400]
+    },
+    {
+      "parameters": {
+        "modelId": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "3",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [600, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}"
+      },
+      "id": "4",
+      "name": "AI Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [600, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nconst aiText = item.text || '';\nconst userQuery = $('Load Menu').item.json.userQuery;\n\nconsole.log('========================================');\nconsole.log('STAGE 1: AI DECISION');\nconsole.log('AI TEXT:', aiText);\n\nconst cleanedText = aiText.replace(/\\/\\/.*$/gm, '').replace(/\\/\\*[\\s\\S]*?\\*\\//g, '');\n\nlet parsed;\ntry {\n  parsed = JSON.parse(cleanedText);\n  console.log('PARSED:', JSON.stringify(parsed, null, 2));\n} catch (e) {\n  console.log('PARSE ERROR:', e.message);\n  parsed = { error: 'Parse failed: ' + e.message };\n}\n\nreturn { json: {\n  stage: 'ai_decision',\n  userQuery: userQuery,\n  decision: parsed\n}};"
+      },
+      "id": "5",
+      "name": "Parse AI Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.decision.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists"
+              }
+            }
+          ]
+        }
+      },
+      "id": "6",
+      "name": "Check Decision Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1000, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { operationId, parameters } = $input.item.json.decision;\nconst spec = $('Load Menu').item.json.fullSpec;\n\nconsole.log('========================================');\nconsole.log('STAGE 2: BUILD API CALL');\nconsole.log('OperationId:', operationId);\nconsole.log('Parameters:', parameters);\n\nlet found = null;\nfor (const [path, pathItem] of Object.entries(spec.paths || {})) {\n  for (const [method, operation] of Object.entries(pathItem)) {\n    if (operation.operationId === operationId) {\n      found = { path, method: method.toUpperCase(), operation };\n      console.log('FOUND:', path, method);\n      break;\n    }\n  }\n  if (found) break;\n}\n\nif (!found) {\n  console.log('OPERATION NOT FOUND');\n  return { json: { error: 'Operation not found', operationId }};\n}\n\nlet baseUrl = spec.servers[0].url;\nif (found.operation.servers && found.operation.servers.length > 0) {\n  baseUrl = found.operation.servers[0].url;\n}\n\nconst fullUrl = baseUrl + found.path;\nconst headers = {};\n\nif (found.operation.security) {\n  headers['CG-API-KEY'] = '114a4fe55ebf42afbec4b56391c791fc';\n  console.log('ADDED API KEY');\n}\n\nconsole.log('URL:', fullUrl);\nconsole.log('PARAMS:', parameters);\n\nreturn { json: {\n  stage: 'api_plan',\n  method: found.method,\n  url: fullUrl,\n  params: parameters,\n  headers: headers\n}};"
+      },
+      "id": "7",
+      "name": "Build API Call",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { method, url, params, headers } = $input.item.json;\n\nconsole.log('========================================');\nconsole.log('STAGE 3: EXECUTE API');\nconsole.log('Method:', method);\nconsole.log('URL:', url);\n\nconst queryParts = [];\nfor (const [k, v] of Object.entries(params || {})) {\n  queryParts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));\n}\nconst fullUrl = queryParts.length > 0 ? url + '?' + queryParts.join('&') : url;\n\nconsole.log('FULL URL:', fullUrl);\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: method,\n    url: fullUrl,\n    headers: headers || {},\n    json: true,\n    timeout: 15000\n  });\n\n  console.log('API SUCCESS');\n  const dataStr = JSON.stringify(response, null, 2);\n  const preview = dataStr.length > 1500 ? dataStr.substring(0, 1500) + '\\n[Truncated]' : dataStr;\n\n  return { json: {\n    stage: 'api_execute',\n    status: 'SUCCESS',\n    response: '✅ API SUCCESS\\n\\nURL: ' + fullUrl + '\\n\\nData:\\n```json\\n' + preview + '\\n```'\n  }};\n\n} catch (error) {\n  console.log('API ERROR:', error.message);\n  return { json: {\n    stage: 'api_execute',\n    status: 'ERROR',\n    response: '❌ API ERROR\\n\\nURL: ' + fullUrl + '\\nError: ' + error.message + '\\nStatus: ' + (error.statusCode || 'unknown')\n  }};\n}"
+      },
+      "id": "8",
+      "name": "Execute API",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const decision = $input.item.json.decision;\nconst errorMsg = '❌ AI DECISION ERROR\\n\\n' + (decision.error || 'Unknown error') + '\\n\\nRaw: ' + JSON.stringify(decision);\n\nreturn { json: { response: errorMsg }};"
+      },
+      "id": "9",
+      "name": "Return Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 500]
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [[{"node": "Load Menu"}]]
+    },
+    "Load Menu": {
+      "main": [[{"node": "AI Chain"}]]
+    },
+    "OpenAI": {
+      "ai_languageModel": [[{"node": "AI Chain", "type": "ai_languageModel"}]]
+    },
+    "AI Chain": {
+      "main": [[{"node": "Parse AI Decision"}]]
+    },
+    "Parse AI Decision": {
+      "main": [[{"node": "Check Decision Valid"}]]
+    },
+    "Check Decision Valid": {
+      "main": [
+        [{"node": "Build API Call"}],
+        [{"node": "Return Error"}]
+      ]
+    },
+    "Build API Call": {
+      "main": [[{"node": "Execute API"}]]
+    }
+  }
+}
+```
+
+## 🎯 What Stage 2 Does:
+
+1. ✅ AI decides (we know this works)
+2. ✅ Check if decision is valid
+3. ✅ Build API call from OpenAPI spec
+4. ✅ Execute the API
+5. ✅ Return real data
+
+**Import and test:**
+```
+btc price
+```
+```
+show me ethereum liquidations
