@@ -1,22 +1,22 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Crypto Data API Menu",
-    "version": "1.0",
-    "description": "Multi-source crypto data APIs"
+    "title": "Crypto Data API",
+    "version": "2.0",
+    "description": "Comprehensive crypto data from Binance and CoinGlass"
   },
   "servers": [
     {
-      "url": "https://open-api-v4.coinglass.com",
-      "description": "CoinGlass API"
-    },
-    {
       "url": "https://api.binance.com",
-      "description": "Binance Spot API"
+      "description": "Binance Spot"
     },
     {
       "url": "https://fapi.binance.com",
-      "description": "Binance Futures API"
+      "description": "Binance Futures"
+    },
+    {
+      "url": "https://open-api-v4.coinglass.com",
+      "description": "CoinGlass"
     }
   ],
   "components": {
@@ -29,69 +29,29 @@
     }
   },
   "paths": {
-    "/api/futures/liquidation/aggregated-history": {
-      "get": {
-        "operationId": "coinglass_liquidations",
-        "summary": "Historical liquidation data across exchanges",
-        "tags": ["CoinGlass"],
-        "parameters": [
-          {
-            "name": "symbol",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "BTC"
-            }
-          },
-          {
-            "name": "interval",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "1d",
-              "enum": ["1h", "4h", "12h", "1d"]
-            }
-          },
-          {
-            "name": "exchange_list",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "BINANCE,OKX,BYBIT"
-            }
-          }
-        ],
-        "security": [{"coinglassApiKey": []}],
-        "responses": {
-          "200": {
-            "description": "Liquidation data"
-          }
-        }
-      }
-    },
     "/api/v3/ticker/price": {
       "get": {
         "operationId": "binance_spot_price",
-        "summary": "Current spot price for trading pair",
-        "tags": ["Binance"],
+        "summary": "Get current spot price for any cryptocurrency trading pair",
+        "description": "Returns the latest spot price. Use when user asks: 'what's the price', 'current price', 'spot price', 'how much is BTC'",
+        "tags": ["Binance", "Price"],
         "servers": [{"url": "https://api.binance.com"}],
         "parameters": [
           {
             "name": "symbol",
             "in": "query",
             "required": true,
+            "description": "Trading pair symbol. Format: BTCUSDT, ETHUSDT, SOLUSDT",
             "schema": {
               "type": "string",
-              "example": "BTCUSDT"
+              "example": "BTCUSDT",
+              "pattern": "^[A-Z]+USDT$"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Price data"
+            "description": "Current price"
           }
         }
       }
@@ -99,14 +59,16 @@
     "/api/v3/ticker/24hr": {
       "get": {
         "operationId": "binance_24h_stats",
-        "summary": "24-hour price statistics",
-        "tags": ["Binance"],
+        "summary": "Get 24-hour trading statistics including price change, volume, high/low",
+        "description": "Returns 24h stats. Use when user asks: '24 hour stats', 'daily stats', 'volume today', 'price change today'",
+        "tags": ["Binance", "Statistics"],
         "servers": [{"url": "https://api.binance.com"}],
         "parameters": [
           {
             "name": "symbol",
             "in": "query",
             "required": true,
+            "description": "Trading pair symbol. Format: BTCUSDT, ETHUSDT",
             "schema": {
               "type": "string",
               "example": "BTCUSDT"
@@ -123,14 +85,16 @@
     "/fapi/v1/fundingRate": {
       "get": {
         "operationId": "binance_funding_rate",
-        "summary": "Current funding rate for perpetual futures",
-        "tags": ["Binance Futures"],
+        "summary": "Get current and historical funding rates for perpetual futures",
+        "description": "Returns funding rate data. Use when user asks: 'funding rate', 'funding', 'perp funding', 'futures funding'",
+        "tags": ["Binance", "Futures", "Funding"],
         "servers": [{"url": "https://fapi.binance.com"}],
         "parameters": [
           {
             "name": "symbol",
             "in": "query",
             "required": true,
+            "description": "Futures symbol. Format: BTCUSDT, ETHUSDT",
             "schema": {
               "type": "string",
               "example": "BTCUSDT"
@@ -140,9 +104,11 @@
             "name": "limit",
             "in": "query",
             "required": false,
+            "description": "Number of results to return",
             "schema": {
               "type": "integer",
-              "default": 1
+              "default": 1,
+              "maximum": 1000
             }
           }
         ],
@@ -156,14 +122,16 @@
     "/fapi/v1/openInterest": {
       "get": {
         "operationId": "binance_open_interest",
-        "summary": "Current open interest for futures",
-        "tags": ["Binance Futures"],
+        "summary": "Get current open interest for futures contracts",
+        "description": "Returns open interest. Use when user asks: 'open interest', 'OI', 'futures open interest', 'contract positions'",
+        "tags": ["Binance", "Futures", "Open Interest"],
         "servers": [{"url": "https://fapi.binance.com"}],
         "parameters": [
           {
             "name": "symbol",
             "in": "query",
             "required": true,
+            "description": "Futures symbol",
             "schema": {
               "type": "string",
               "example": "BTCUSDT"
@@ -180,8 +148,9 @@
     "/futures/data/globalLongShortAccountRatio": {
       "get": {
         "operationId": "binance_long_short_ratio",
-        "summary": "Long/Short account ratio",
-        "tags": ["Binance Futures"],
+        "summary": "Get long/short account ratio showing market sentiment",
+        "description": "Returns long/short ratio. Use when user asks: 'long short ratio', 'sentiment', 'positioning', 'are people long or short'",
+        "tags": ["Binance", "Futures", "Sentiment"],
         "servers": [{"url": "https://fapi.binance.com"}],
         "parameters": [
           {
@@ -197,6 +166,7 @@
             "name": "period",
             "in": "query",
             "required": true,
+            "description": "Time period for data",
             "schema": {
               "type": "string",
               "default": "5m",
@@ -209,13 +179,63 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10
+              "default": 10,
+              "maximum": 500
             }
           }
         ],
         "responses": {
           "200": {
             "description": "Long/short ratio data"
+          }
+        }
+      }
+    },
+    "/api/futures/liquidation/aggregated-history": {
+      "get": {
+        "operationId": "coinglass_liquidations",
+        "summary": "Get historical liquidation data aggregated across multiple exchanges",
+        "description": "Returns liquidation history. Use when user asks: 'liquidations', 'liq data', 'liquidation history', 'how much got liquidated'",
+        "tags": ["CoinGlass", "Liquidations"],
+        "servers": [{"url": "https://open-api-v4.coinglass.com"}],
+        "security": [{"coinglassApiKey": []}],
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": true,
+            "description": "Symbol in CoinGlass format: BTC, ETH, SOL (NOT BTCUSDT)",
+            "schema": {
+              "type": "string",
+              "example": "BTC",
+              "pattern": "^[A-Z]+$"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": true,
+            "description": "Time interval for aggregation",
+            "schema": {
+              "type": "string",
+              "default": "1d",
+              "enum": ["1h", "4h", "12h", "1d"]
+            }
+          },
+          {
+            "name": "exchange_list",
+            "in": "query",
+            "required": true,
+            "description": "Comma-separated list of exchanges",
+            "schema": {
+              "type": "string",
+              "default": "BINANCE,OKX,BYBIT"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liquidation history"
           }
         }
       }
